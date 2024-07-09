@@ -19,9 +19,7 @@
 		{
 			"files": "*.json",
 			"options": {
-				"printWidth": 120,
-				"tabWidth": 2,
-				"useTabs": true
+				"printWidth": 120
 			}
 		}
 	]
