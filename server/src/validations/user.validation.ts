@@ -6,15 +6,15 @@ import { DefaultSchemaKeys } from "express-validator/lib/middlewares/schema";
  */
 const emailAuthSchema: Schema<DefaultSchemaKeys> = {
 	email: { in: ["body"], isEmail: true },
-	created_at: {
-		in: ["body"],
-		isTime: {
-			options: {
-				hourFormat: "hour24",
-				mode: "withSeconds",
-			},
-		},
-	},
+	// created_at: {
+	// 	in: ["body"],
+	// 	isTime: {
+	// 		options: {
+	// 			hourFormat: "hour24",
+	// 			mode: "withSeconds",
+	// 		},
+	// 	},
+	// },
 };
 
 export { emailAuthSchema };
