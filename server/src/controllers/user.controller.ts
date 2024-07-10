@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 
+import { sendAuthMail } from "../services/mail";
 import { generateRandomNumber } from "../utils/random";
 
 export const register = (req: Request, res: Response, next: NextFunction) => {
@@ -17,11 +18,11 @@ export const emailAuth = async (req: Request, res: Response) => {
 	try {
 		// 랜덤 번호 생성
 		const ranNum = generateRandomNumber(4);
-		console.log(ranNum);
 
 		// jwt 토큰 생성
 
 		// 매일 발송
+		await sendAuthMail(email, ranNum);
 
 		// 응답
 		res.status(StatusCodes.OK).json({ message: "성공적인 응답" });
