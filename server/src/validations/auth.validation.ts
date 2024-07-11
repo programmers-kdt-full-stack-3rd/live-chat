@@ -1,14 +1,52 @@
-// import { Schema } from "express-validator";
-// import { DefaultSchemaKeys } from "express-validator/lib/middlewares/schema";
+import { Schema } from "express-validator";
+import { DefaultSchemaKeys } from "express-validator/lib/middlewares/schema";
 
-// TODO: 이메일 인증 validation schema
+const createVerificationSchema: Schema<DefaultSchemaKeys> = {
+	email: { in: ["body"], isEmail: true, normalizeEmail: true },
+};
 
-/**
- * 엔드포인트: post /api/auth
- * validation schem
- */
-// const authEmailSchema: Schema<DefaultSchemaKeys> = {
-// 	email: { in: ["body"], isEmail: true },
-// };
+const updateVerificationSchema: Schema<DefaultSchemaKeys> = {
+	// register_token: {
+	// 	in: ["cookies"],
+	// 	isJWT: true,
+	// },
+	// email: { in: ["body"], isEmail: true, normalizeEmail: true },
+};
 
-// export { authEmailSchema };
+const deleteVerificationSchema: Schema<DefaultSchemaKeys> = {
+	// register_token: {
+	// 	in: ["cookies"],
+	// 	isJWT: true,
+	// },
+	// email: { in: ["body"], isEmail: true, normalizeEmail: true },
+};
+
+const sendVerificationSchema: Schema<DefaultSchemaKeys> = {
+	// register_token: {
+	// 	in: ["cookies"],
+	// 	isJWT: true,
+	// },
+	// email: { in: ["body"], isEmail: true, normalizeEmail: true },
+};
+
+const verifySchema: Schema<DefaultSchemaKeys> = {
+	// register_token: {
+	// 	in: ["cookies"],
+	// 	isJWT: true,
+	// },
+	// email: { in: ["body"], isEmail: true, normalizeEmail: true },
+	// code: {
+	// 	in: ["body"],
+	// 	isLength: {
+	// 		options: { min: 4, max: 4 },
+	// 	},
+	// },
+};
+
+export {
+	createVerificationSchema,
+	updateVerificationSchema,
+	deleteVerificationSchema,
+	sendVerificationSchema,
+	verifySchema,
+};
