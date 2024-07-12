@@ -1,14 +1,39 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
+import { generateToken } from "../services/auth";
 // import { sendAuthMail } from "../services/mail";
 // import { generateRandomNumber } from "../utils/random";
-// import { generateToken } from "../services/auth";
 
 const createVerification = (req: Request, res: Response) => {
-	res.status(StatusCodes.OK).json({
-		message: "POST /auth/email/verification",
-	});
+	const { email } = req.body;
+
+	try {
+		// TODO: 인증 번호 생성 및 해싱 처리
+
+		// TODO: DB 리소스 생성
+
+		// token 발급
+		const token = generateToken({ email }, "60m");
+
+		// 토큰 쿠키 전송
+		res.cookie("regitser_token", token, {
+			maxAge: 3600000,
+			httpOnly: true,
+			signed: true,
+		});
+
+		// 응답
+		res.status(StatusCodes.CREATED).json({
+			message: "POST /auth/email/verification",
+		});
+	} catch (error) {
+		console.error(error);
+
+		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+			message: "internal server error",
+		});
+	}
 };
 
 const updateVerification = (req: Request, res: Response) => {
