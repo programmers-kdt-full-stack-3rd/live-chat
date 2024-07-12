@@ -17,7 +17,7 @@ const createVerification = async (req: Request, res: Response) => {
 		await addVerification(email, code);
 
 		// token 발급
-		const token = generateToken({ email }, "60m");
+		const token = generateToken({ email, status: 0 }, "60m");
 		console.log(token);
 
 		// 토큰 쿠키 전송
@@ -41,12 +41,24 @@ const createVerification = async (req: Request, res: Response) => {
 };
 
 const updateVerification = (req: Request, res: Response) => {
+	const jwtPayload = (req as any).registerInfo;
+
+	if (jwtPayload.status !== 3) {
+		res.status(StatusCodes.UNAUTHORIZED).end();
+	}
+
 	res.status(StatusCodes.OK).json({
 		message: "PATCH /auth/email/verification",
 	});
 };
 
 const deleteVerification = (req: Request, res: Response) => {
+	const jwtPayload = (req as any).registerInfo;
+
+	if (jwtPayload.status !== 6) {
+		res.status(StatusCodes.UNAUTHORIZED).end();
+	}
+
 	res.status(StatusCodes.OK).json({
 		message: "DELETE /auth/email/verification",
 	});

@@ -17,6 +17,7 @@ import {
 	mergeSignedCookiesIntoCookies,
 	validate,
 } from "../middlewares/validate";
+import { verifyToken } from "../middlewares/auth";
 
 const router = express.Router();
 
@@ -39,6 +40,7 @@ router.patch(
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
 	validate,
+	verifyToken,
 	updateVerification
 );
 router.delete(
@@ -46,6 +48,7 @@ router.delete(
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
 	validate,
+	verifyToken,
 	deleteVerification
 );
 
@@ -57,6 +60,7 @@ router.post(
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
 	validate,
+	verifyToken,
 	sendVerification
 );
 
@@ -68,6 +72,7 @@ router.post(
 	mergeSignedCookiesIntoCookies,
 	checkSchema(verifySchema),
 	validate,
+	verifyToken,
 	verify
 );
 

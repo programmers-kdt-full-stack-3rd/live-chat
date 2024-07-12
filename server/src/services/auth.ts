@@ -19,4 +19,16 @@ const generateToken = (payload: object, expiresIn: string = "") => {
 	return token;
 };
 
+/**
+ * verification 생성
+ */
+
+/**
+ * verification 수정
+ */
+
+/**
+ * verification 삭제
+ */
+
 export { generateToken };
