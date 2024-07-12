@@ -1,19 +1,20 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { randomBytes, pbkdf2Sync } from "crypto";
 
 import { generateToken } from "../services/auth";
 import { generateRandomNumber } from "../utils/random";
+import { addVerification } from "../db/context/verifications";
 // import { sendAuthMail } from "../services/mail";
 
-const createVerification = (req: Request, res: Response) => {
+const createVerification = async (req: Request, res: Response) => {
 	const { email } = req.body;
 
 	try {
-		// TODO: 인증 번호 생성
+		// 인증 번호 생성
 		const code = generateRandomNumber(6);
 
-		// TODO: DB 리소스 생성
+		// DB 리소스 생성
+		await addVerification(email, code);
 
 		// token 발급
 		const token = generateToken({ email }, "60m");
