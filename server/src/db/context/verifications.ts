@@ -1,15 +1,22 @@
 import { connectDB } from "../connection";
 
-// 인증 번호 저장
-const addVerification = async (email: string, code: string) => {
+/**
+ * 인증 번호 생성
+ */
+const insertVerification = async (email: string, code: string) => {
 	const connection = await connectDB();
-	await connection.query(
+	const result = await connection.query(
 		`INSERT INTO verifications (email, code) VALUES (?, ?)`,
 		[email, code]
 	);
+
+	return result;
 };
 
-const getVerification = async (email: string) => {
+/**
+ * 인증 번호 조회
+ */
+const getVerificationByEmail = async (email: string) => {
 	const connection = await connectDB();
 	const [rows] = await connection.query(
 		`SELECT * FROM verifications WHERE email=?`,
@@ -19,40 +26,42 @@ const getVerification = async (email: string) => {
 	return rows;
 };
 
-const updateVerification = async (email: string, code: string) => {
+/**
+ * 인증 번호 수정
+ */
+const updateVerification = async (id: number, code: string) => {
 	const connection = await connectDB();
-	await connection.query(
+	const result = await connection.query(
 		`
 		UPDATE verifications
 		SET code=?
-		WHERE email=?
+		WHERE id=?
 		`,
-		[code, email]
+		[code, id]
 	);
+
+	return result;
 };
 
-const deleteVerification = async (email: string) => {
+/**
+ * 인증 번호 삭제
+ */
+const deleteVerification = async (id: number) => {
 	const connection = await connectDB();
 	const [result] = await connection.query(
 		`
 		DELETE FROM verifications
-		WHERE email=?
+		WHERE id=?
 		`,
-		[email]
+		[id]
 	);
 
-	const affectedRows = (result as any).affectedRows;
-
-	if (affectedRows === 0) {
-		const err = new Error();
-		throw Error("affected row 0");
-	}
-	console.log(result);
+	return result;
 };
 
 export {
-	addVerification,
-	getVerification,
+	insertVerification,
+	getVerificationByEmail,
 	updateVerification,
 	deleteVerification,
 };

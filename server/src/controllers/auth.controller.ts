@@ -1,30 +1,42 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-import { generateToken } from "../services/auth";
-import { generateRandomNumber } from "../utils/random";
+import { createToken } from "../services/token";
 import {
-	addVerification,
-	updateVerification,
-	deleteVerification,
-} from "../db/context/verifications";
+	createNewVerification,
+	findVerificationByEmail,
+	removeVerificationById,
+	updateExistingVerification,
+} from "../services/auth";
+import { IAffectedRows, IInsertId, IRequest } from "../types/index";
+import { BadRequestError } from "../errors";
 // import { sendAuthMail } from "../services/mail";
 
-const createVerificationRequest = async (req: Request, res: Response) => {
+/**
+ * POST /auth/email/verification
+ */
+const createVerification = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	const { email } = req.body;
 
 	try {
-		// 인증 번호 생성
-		const code = generateRandomNumber(6);
+		// 인증 번호 조회
+		const result = (await findVerificationByEmail(email)) as Array<object>;
 
-		// DB 리소스 생성
-		await addVerification(email, code);
+		if (result.length > 0) {
+			throw new BadRequestError();
+		}
 
-		// token 발급
-		const token = generateToken({ email, status: 0 }, "60m");
-		console.log(token);
+		// 인증 번호 생성 및 DB에 리소스 생성
+		const { insertId } = (await createNewVerification(email)) as IInsertId;
 
-		// 토큰 쿠키 전송
+		// 토큰 발급
+		const token = createToken({ id: insertId, status: 0 }, "1h");
+
+		// 쿠키 설정
 		res.cookie("register_token", token, {
 			maxAge: 3600000,
 			httpOnly: true,
@@ -36,73 +48,90 @@ const createVerificationRequest = async (req: Request, res: Response) => {
 			message: "POST /auth/email/verification",
 		});
 	} catch (error) {
-		console.error(error);
-
-		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-			message: "internal server error",
-		});
+		next(error);
 	}
 };
 
-const updateVerificationRequest = async (req: Request, res: Response) => {
-	const jwtPayload = (req as any).registerInfo;
+/**
+ * PATCH /auth/email/verification
+ */
+const updateVerification = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const { id, status } = (req as IRequest).registerInfo;
 
 	try {
-		// if (jwtPayload.status !== 3) {
+		// if (status !== 3) {
 		// 	res.status(StatusCodes.UNAUTHORIZED).end();
 		// }
 
-		// 인증 번호 생성
-		const code = generateRandomNumber(6);
+		// 인증 번호 생성 및 DB에 리소스 생성
+		const { affectedRows } = (await updateExistingVerification(
+			id
+		)) as IAffectedRows;
 
-		// DB 리소스 생성
-		await updateVerification(jwtPayload.email, code);
+		if (affectedRows !== 1) throw new BadRequestError();
 
+		// 토큰 발급
+		const token = createToken({ id, status: 4 }, "1h");
+
+		// 쿠키 설정
+		res.cookie("register_token", token, {
+			maxAge: 3600000,
+			httpOnly: true,
+			signed: true,
+		});
+
+		// 응답
 		res.status(StatusCodes.OK).json({
 			message: "PATCH /auth/email/verification",
 		});
 	} catch (error) {
-		console.error(error);
-
-		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-			message: "internal server error",
-		});
+		next(error);
 	}
 };
 
-const deleteVerificationRequest = async (req: Request, res: Response) => {
-	const jwtPayload = (req as any).registerInfo;
+/**
+ * DELETE /auth/email/verification
+ */
+const deleteVerification = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const { id, status } = (req as IRequest).registerInfo;
 
 	try {
-		// if (jwtPayload.status !== 6) {
+		// if (status !== 6) {
 		// 	res.status(StatusCodes.UNAUTHORIZED).end();
 		// }
 
+		// DB 리소스 생성
+		const { affectedRows } = (await removeVerificationById(
+			id
+		)) as IAffectedRows;
+
+		if (affectedRows !== 1) {
+			throw new BadRequestError();
+		}
+
 		// 쿠키 삭제
 		res.clearCookie("register_token");
-
-		// DB 리소스 생성
-		await deleteVerification(jwtPayload.email);
-
-		// todo: 삭제 되었는데 요청 처리되는 문제
 
 		res.status(StatusCodes.OK).json({
 			message: "DELETE /auth/email/verification",
 		});
 	} catch (error) {
-		console.error(error);
-
-		if ((error as any).message === "affected row 0") {
-			return res.status(StatusCodes.BAD_REQUEST).end();
-		}
-
-		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-			message: "internal server error",
-		});
+		next(error);
 	}
 };
 
-const sendVerificationRequest = async (req: Request, res: Response) => {
+/**
+ * POST /auth/email/send-verification
+ */
+const sendVerification = async (req: Request, res: Response) => {
 	// const email = req.body.email;
 	// try {
 	// 	// 랜덤 번호 생성
@@ -131,16 +160,19 @@ const sendVerificationRequest = async (req: Request, res: Response) => {
 	});
 };
 
-const verifyRequest = (req: Request, res: Response) => {
+/**
+ * POST /auth/email/verify
+ */
+const verify = (req: Request, res: Response) => {
 	res.status(StatusCodes.OK).json({
 		message: "POST /auth/email/verify",
 	});
 };
 
 export {
-	createVerificationRequest,
-	updateVerificationRequest,
-	deleteVerificationRequest,
-	sendVerificationRequest,
-	verifyRequest,
+	createVerification,
+	updateVerification,
+	deleteVerification,
+	sendVerification,
+	verify,
 };

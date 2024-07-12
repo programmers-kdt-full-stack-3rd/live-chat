@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 /**
  * 랜덤 숫자 생성
  */
-const generateRandomNumber = (digit: number): string => {
+const createRandomNumber = (digit: number): string => {
 	const randomNumber = crypto
 		.randomBytes(Math.ceil(digit / 2))
 		.toString("hex")
@@ -12,4 +12,4 @@ const generateRandomNumber = (digit: number): string => {
 	return randomNumber;
 };
 
-export { generateRandomNumber };
+export { createRandomNumber };
