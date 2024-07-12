@@ -2,11 +2,11 @@ import express, { NextFunction, Request, Response } from "express";
 import { checkSchema } from "express-validator";
 
 import {
-	createVerification,
-	deleteVerification,
-	sendVerification,
-	updateVerification,
-	verify,
+	createVerificationRequest,
+	deleteVerificationRequest,
+	sendVerificationRequest,
+	updateVerificationRequest,
+	verifyRequest,
 } from "../controllers/auth.controller";
 import {
 	emailSchema,
@@ -33,7 +33,7 @@ router.post(
 	"/email/verification",
 	checkSchema(emailSchema),
 	validate,
-	createVerification
+	createVerificationRequest
 );
 router.patch(
 	"/email/verification",
@@ -41,7 +41,7 @@ router.patch(
 	checkSchema(cookieJWTSchema),
 	validate,
 	verifyToken,
-	updateVerification
+	updateVerificationRequest
 );
 router.delete(
 	"/email/verification",
@@ -49,7 +49,7 @@ router.delete(
 	checkSchema(cookieJWTSchema),
 	validate,
 	verifyToken,
-	deleteVerification
+	deleteVerificationRequest
 );
 
 /**
@@ -61,7 +61,7 @@ router.post(
 	checkSchema(cookieJWTSchema),
 	validate,
 	verifyToken,
-	sendVerification
+	sendVerificationRequest
 );
 
 /**
@@ -73,7 +73,7 @@ router.post(
 	checkSchema(verifySchema),
 	validate,
 	verifyToken,
-	verify
+	verifyRequest
 );
 
 export default router;

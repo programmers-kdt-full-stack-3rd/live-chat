@@ -26,6 +26,8 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 		) as IRegisterTokenPayload;
 
 		(req as any).registerInfo = decoded;
+
+		next();
 	} catch (error) {
 		// 토큰 만료
 		if (error instanceof TokenExpiredError) {
@@ -33,10 +35,8 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 			return res.status(StatusCodes.UNAUTHORIZED).end();
 		}
 
-		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
+		res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
-
-	return next();
 };
 
 /**

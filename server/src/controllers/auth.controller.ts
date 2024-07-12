@@ -3,10 +3,14 @@ import { StatusCodes } from "http-status-codes";
 
 import { generateToken } from "../services/auth";
 import { generateRandomNumber } from "../utils/random";
-import { addVerification } from "../db/context/verifications";
+import {
+	addVerification,
+	updateVerification,
+	deleteVerification,
+} from "../db/context/verifications";
 // import { sendAuthMail } from "../services/mail";
 
-const createVerification = async (req: Request, res: Response) => {
+const createVerificationRequest = async (req: Request, res: Response) => {
 	const { email } = req.body;
 
 	try {
@@ -40,31 +44,65 @@ const createVerification = async (req: Request, res: Response) => {
 	}
 };
 
-const updateVerification = (req: Request, res: Response) => {
+const updateVerificationRequest = async (req: Request, res: Response) => {
 	const jwtPayload = (req as any).registerInfo;
 
-	if (jwtPayload.status !== 3) {
-		res.status(StatusCodes.UNAUTHORIZED).end();
-	}
+	try {
+		// if (jwtPayload.status !== 3) {
+		// 	res.status(StatusCodes.UNAUTHORIZED).end();
+		// }
 
-	res.status(StatusCodes.OK).json({
-		message: "PATCH /auth/email/verification",
-	});
+		// 인증 번호 생성
+		const code = generateRandomNumber(6);
+
+		// DB 리소스 생성
+		await updateVerification(jwtPayload.email, code);
+
+		res.status(StatusCodes.OK).json({
+			message: "PATCH /auth/email/verification",
+		});
+	} catch (error) {
+		console.error(error);
+
+		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+			message: "internal server error",
+		});
+	}
 };
 
-const deleteVerification = (req: Request, res: Response) => {
+const deleteVerificationRequest = async (req: Request, res: Response) => {
 	const jwtPayload = (req as any).registerInfo;
 
-	if (jwtPayload.status !== 6) {
-		res.status(StatusCodes.UNAUTHORIZED).end();
-	}
+	try {
+		// if (jwtPayload.status !== 6) {
+		// 	res.status(StatusCodes.UNAUTHORIZED).end();
+		// }
 
-	res.status(StatusCodes.OK).json({
-		message: "DELETE /auth/email/verification",
-	});
+		// 쿠키 삭제
+		res.clearCookie("register_token");
+
+		// DB 리소스 생성
+		await deleteVerification(jwtPayload.email);
+
+		// todo: 삭제 되었는데 요청 처리되는 문제
+
+		res.status(StatusCodes.OK).json({
+			message: "DELETE /auth/email/verification",
+		});
+	} catch (error) {
+		console.error(error);
+
+		if ((error as any).message === "affected row 0") {
+			return res.status(StatusCodes.BAD_REQUEST).end();
+		}
+
+		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+			message: "internal server error",
+		});
+	}
 };
 
-const sendVerification = async (req: Request, res: Response) => {
+const sendVerificationRequest = async (req: Request, res: Response) => {
 	// const email = req.body.email;
 	// try {
 	// 	// 랜덤 번호 생성
@@ -93,16 +131,16 @@ const sendVerification = async (req: Request, res: Response) => {
 	});
 };
 
-const verify = (req: Request, res: Response) => {
+const verifyRequest = (req: Request, res: Response) => {
 	res.status(StatusCodes.OK).json({
 		message: "POST /auth/email/verify",
 	});
 };
 
 export {
-	createVerification,
-	updateVerification,
-	deleteVerification,
-	sendVerification,
-	verify,
+	createVerificationRequest,
+	updateVerificationRequest,
+	deleteVerificationRequest,
+	sendVerificationRequest,
+	verifyRequest,
 };
