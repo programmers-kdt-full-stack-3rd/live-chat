@@ -18,14 +18,14 @@ import {
 import { validate } from "../middlewares/validate";
 
 const router = express.Router();
+
+/**
+ * 라우터 설정
+ */
 router.use(express.json());
 
 /**
- * /auth 라우트 엔드포인트 정의
- */
-
-/**
- * 인증 번호 DB 리소스 제어
+ * 인증 번호 CRUD API 엔드포인트
  */
 router.post(
 	"/email/verification",
@@ -47,7 +47,7 @@ router.delete(
 );
 
 /**
- * 인증 이메일 발송
+ * 인증 이메일 발송 API 엔드포인트
  */
 router.post(
 	"/email/send-verification",
@@ -57,7 +57,7 @@ router.post(
 );
 
 /**
- * 인증 번호 검증
+ * 인증 번호 검증 API 엔드포인트
  */
 router.post("/email/verify", checkSchema(verifySchema), validate, verify);
 
