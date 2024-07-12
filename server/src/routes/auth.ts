@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { checkSchema } from "express-validator";
 
 import {
@@ -9,13 +9,14 @@ import {
 	verify,
 } from "../controllers/auth.controller";
 import {
-	createVerificationSchema,
-	deleteVerificationSchema,
-	sendVerificationSchema,
-	updateVerificationSchema,
+	emailSchema,
+	cookieJWTSchema,
 	verifySchema,
 } from "../validations/auth.validation";
-import { validate } from "../middlewares/validate";
+import {
+	mergeSignedCookiesIntoCookies,
+	validate,
+} from "../middlewares/validate";
 
 const router = express.Router();
 
@@ -29,19 +30,21 @@ router.use(express.json());
  */
 router.post(
 	"/email/verification",
-	checkSchema(createVerificationSchema),
+	checkSchema(emailSchema),
 	validate,
 	createVerification
 );
 router.patch(
 	"/email/verification",
-	checkSchema(updateVerificationSchema),
+	mergeSignedCookiesIntoCookies,
+	checkSchema(cookieJWTSchema),
 	validate,
 	updateVerification
 );
 router.delete(
 	"/email/verification",
-	checkSchema(deleteVerificationSchema),
+	mergeSignedCookiesIntoCookies,
+	checkSchema(cookieJWTSchema),
 	validate,
 	deleteVerification
 );
@@ -51,7 +54,8 @@ router.delete(
  */
 router.post(
 	"/email/send-verification",
-	checkSchema(sendVerificationSchema),
+	mergeSignedCookiesIntoCookies,
+	checkSchema(cookieJWTSchema),
 	validate,
 	sendVerification
 );
@@ -59,6 +63,12 @@ router.post(
 /**
  * 인증 번호 검증 API 엔드포인트
  */
-router.post("/email/verify", checkSchema(verifySchema), validate, verify);
+router.post(
+	"/email/verify",
+	mergeSignedCookiesIntoCookies,
+	checkSchema(verifySchema),
+	validate,
+	verify
+);
 
 export default router;

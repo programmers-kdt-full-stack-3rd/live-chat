@@ -18,9 +18,10 @@ const createVerification = async (req: Request, res: Response) => {
 
 		// token 발급
 		const token = generateToken({ email }, "60m");
+		console.log(token);
 
 		// 토큰 쿠키 전송
-		res.cookie("regitser_token", token, {
+		res.cookie("register_token", token, {
 			maxAge: 3600000,
 			httpOnly: true,
 			signed: true,
