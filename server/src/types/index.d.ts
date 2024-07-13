@@ -10,6 +10,15 @@ interface IAffectedRows {
 	affectedRows: number;
 }
 
+interface IVerificationShema {
+	id: number;
+	email: string;
+	code: string;
+	expired_at: Date;
+	created_at: Date;
+	updated_at: Date;
+}
+
 // express 관련 타입 및 인터페이스
 interface IRequest extends Request {
 	registerInfo: IRegisterTokenPayload;
@@ -26,4 +35,11 @@ interface IError extends Error {
 	statusCode?: number;
 }
 
-export { IInsertId, IAffectedRows, IRequest, IRegisterTokenPayload, IError };
+export {
+	IInsertId,
+	IAffectedRows,
+	IVerificationShema,
+	IRequest,
+	IRegisterTokenPayload,
+	IError,
+};

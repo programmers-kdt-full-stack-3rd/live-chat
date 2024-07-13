@@ -5,16 +5,25 @@ import {
 	insertVerification,
 	deleteVerification,
 	updateVerification,
-	getVerificationByEmail,
+	getVerificationByValue,
 } from "../db/context/verifications";
 
 dotenv.config();
 
 /**
- * 인증 번호 조회
+ * 인증 번호 조회 by email
  */
 const findVerificationByEmail = async (email: string): Promise<object> => {
-	const result = await getVerificationByEmail(email);
+	const result = await getVerificationByValue(email);
+
+	return result;
+};
+
+/**
+ * 인증 번호 조회 by id
+ */
+const findVerificationById = async (id: number): Promise<object> => {
+	const result = await getVerificationByValue(id);
 
 	return result;
 };
@@ -44,12 +53,12 @@ const updateExistingVerification = async (id: number) => {
  */
 const removeVerificationById = async (id: number) => {
 	const result = await deleteVerification(id);
-	console.log(result);
 	return result;
 };
 
 export {
 	findVerificationByEmail,
+	findVerificationById,
 	createNewVerification,
 	updateExistingVerification,
 	removeVerificationById,

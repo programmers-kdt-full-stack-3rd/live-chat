@@ -16,11 +16,13 @@ const insertVerification = async (email: string, code: string) => {
 /**
  * 인증 번호 조회
  */
-const getVerificationByEmail = async (email: string) => {
+const getVerificationByValue = async (value: string | number) => {
+	const column = typeof value === "string" ? "email" : "id";
+
 	const connection = await connectDB();
 	const [rows] = await connection.query(
-		`SELECT * FROM verifications WHERE email=?`,
-		[email]
+		`SELECT * FROM verifications WHERE ${column}=?`,
+		[value]
 	);
 
 	return rows;
@@ -61,7 +63,7 @@ const deleteVerification = async (id: number) => {
 
 export {
 	insertVerification,
-	getVerificationByEmail,
+	getVerificationByValue,
 	updateVerification,
 	deleteVerification,
 };

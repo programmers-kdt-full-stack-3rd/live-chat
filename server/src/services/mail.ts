@@ -11,7 +11,7 @@ let transporter: Transporter | null = null;
 /**
  * 인증 메일 발송
  */
-const sendAuthMail = async (to: string, ranNum: string) => {
+const sendAuthMail = async (to: string, code: string) => {
 	if (!transporter) {
 		transporter = createTransport(smtpconfig);
 	}
@@ -20,7 +20,7 @@ const sendAuthMail = async (to: string, ranNum: string) => {
 		from: process.env.NODEMAILER_EMAIL,
 		to,
 		subject: "live-chat 인증 번호 발송 메일",
-		text: `인증 번호 : ${ranNum}`,
+		text: `인증 번호 : ${code.split("").join(" ")}`,
 	};
 
 	return await transporter.sendMail(mailOptions);

@@ -5,12 +5,18 @@ import { createToken } from "../services/token";
 import {
 	createNewVerification,
 	findVerificationByEmail,
+	findVerificationById,
 	removeVerificationById,
 	updateExistingVerification,
 } from "../services/auth";
-import { IAffectedRows, IInsertId, IRequest } from "../types/index";
+import { sendAuthMail } from "../services/mail";
+import {
+	IAffectedRows,
+	IInsertId,
+	IRequest,
+	IVerificationShema,
+} from "../types/index";
 import { BadRequestError } from "../errors";
-// import { sendAuthMail } from "../services/mail";
 
 /**
  * POST /auth/email/verification
@@ -23,6 +29,7 @@ const createVerification = async (
 	const { email } = req.body;
 
 	try {
+		// TODO: 회원가입 세션, 유저 이메일 DB 조회 한번으로 해결
 		// 인증 번호 조회
 		const result = (await findVerificationByEmail(email)) as Array<object>;
 
@@ -63,9 +70,7 @@ const updateVerification = async (
 	const { id, status } = (req as IRequest).registerInfo;
 
 	try {
-		// if (status !== 3) {
-		// 	res.status(StatusCodes.UNAUTHORIZED).end();
-		// }
+		// TODO: 회원가입 세션 확인
 
 		// 인증 번호 생성 및 DB에 리소스 생성
 		const { affectedRows } = (await updateExistingVerification(
@@ -104,9 +109,7 @@ const deleteVerification = async (
 	const { id, status } = (req as IRequest).registerInfo;
 
 	try {
-		// if (status !== 6) {
-		// 	res.status(StatusCodes.UNAUTHORIZED).end();
-		// }
+		// TODO: 회원가입 세션 확인
 
 		// DB 리소스 생성
 		const { affectedRows } = (await removeVerificationById(
@@ -131,33 +134,47 @@ const deleteVerification = async (
 /**
  * POST /auth/email/send-verification
  */
-const sendVerification = async (req: Request, res: Response) => {
-	// const email = req.body.email;
-	// try {
-	// 	// 랜덤 번호 생성
-	// 	const ranNum = generateRandomNumber(4);
-	// 	// jwt 토큰 생성
-	// 	const token = generateToken(
-	// 		{
-	// 			email,
-	// 		},
-	// 		ranNum,
-	// 		"5m"
-	// 	);
-	// 	// 매일 발송
-	// 	await sendAuthMail(email, ranNum);
-	// 	// 응답
-	// 	res.status(StatusCodes.OK).json({ token });
-	// } catch (error) {
-	// 	console.error(error);
-	// 	res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-	// 		message: "서버 에러",
-	// 	});
-	// }
+const sendVerification = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const { id, status } = (req as IRequest).registerInfo;
 
-	res.status(StatusCodes.OK).json({
-		message: "POST /auth/email/send-verification",
-	});
+	try {
+		// TODO: 회원가입 세션 확인
+
+		// 인증 번호 조회
+		const result = (await findVerificationById(
+			id
+		)) as Array<IVerificationShema>;
+
+		if (result.length === 0) {
+			throw new BadRequestError();
+		}
+
+		const { email, code } = result[0];
+
+		// 메일 발송
+		await sendAuthMail(email, code);
+
+		// 토큰 발급
+		const token = createToken({ id, status: 2 }, "1h");
+
+		// 쿠키 설정
+		res.cookie("register_token", token, {
+			maxAge: 3600000,
+			httpOnly: true,
+			signed: true,
+		});
+
+		// 응답
+		res.status(StatusCodes.OK).json({
+			message: "POST /auth/email/send-verification",
+		});
+	} catch (error) {
+		next(error);
+	}
 };
 
 /**
