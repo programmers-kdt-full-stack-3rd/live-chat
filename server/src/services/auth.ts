@@ -7,6 +7,7 @@ import {
 	updateVerification,
 	getVerificationByValue,
 } from "../db/context/verifications";
+import { IVerificationShema } from "../types";
 
 dotenv.config();
 
@@ -56,10 +57,22 @@ const removeVerificationById = async (id: number) => {
 	return result;
 };
 
+/**
+ * 인증 번호 조회 및 검증
+ */
+const verifyCode = async (id: number, reqCode: string): Promise<boolean> => {
+	const [result] = (await getVerificationByValue(
+		id
+	)) as Array<IVerificationShema>;
+
+	return reqCode === result.code ? true : false;
+};
+
 export {
 	findVerificationByEmail,
 	findVerificationById,
 	createNewVerification,
 	updateExistingVerification,
 	removeVerificationById,
+	verifyCode,
 };
