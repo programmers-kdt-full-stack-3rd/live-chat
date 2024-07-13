@@ -8,6 +8,7 @@ import {
 	findVerificationById,
 	removeVerificationById,
 	updateExistingVerification,
+	verifyCode,
 } from "../services/auth";
 import { sendAuthMail } from "../services/mail";
 import {
@@ -16,7 +17,7 @@ import {
 	IRequest,
 	IVerificationShema,
 } from "../types/index";
-import { BadRequestError } from "../errors";
+import { BadRequestError, UnauthorizedError } from "../errors";
 
 /**
  * POST /auth/email/verification
@@ -180,10 +181,45 @@ const sendVerification = async (
 /**
  * POST /auth/email/verify
  */
-const verify = (req: Request, res: Response) => {
-	res.status(StatusCodes.OK).json({
-		message: "POST /auth/email/verify",
-	});
+const verify = async (req: Request, res: Response, next: NextFunction) => {
+	const { code } = req.body;
+	const { id, status } = (req as IRequest).registerInfo;
+
+	try {
+		// TODO: 회원가입 세션 확인
+
+		// 인증 번호 조회
+		const result = (await findVerificationById(
+			id
+		)) as Array<IVerificationShema>;
+
+		if (result.length === 0) {
+			throw new BadRequestError();
+		}
+
+		// 인증 번호 검증
+		const isVerify = await verifyCode(id, code);
+
+		// 실패시 에러
+		if (!isVerify) throw new UnauthorizedError("잘못된 코드입니다.");
+
+		// 토큰 발급
+		const token = createToken({ id, status: 4 }, "1h");
+
+		// 쿠키 설정
+		res.cookie("register_token", token, {
+			maxAge: 3600000,
+			httpOnly: true,
+			signed: true,
+		});
+
+		// 응답
+		res.status(StatusCodes.OK).json({
+			message: "POST /auth/email/verify",
+		});
+	} catch (error) {
+		next(error);
+	}
 };
 
 export {
