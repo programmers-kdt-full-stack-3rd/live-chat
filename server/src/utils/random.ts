@@ -1,15 +1,15 @@
+import crypto from "node:crypto";
+
 /**
- * 랜덤 4자리 숫자 생성
+ * 랜덤 숫자 생성
  */
-const generateRandomNumber = (digits: number): string => {
-	let randomList = [];
+const createRandomNumber = (digit: number): string => {
+	const randomNumber = crypto
+		.randomBytes(Math.ceil(digit / 2))
+		.toString("hex")
+		.slice(0, digit);
 
-	for (let i = 0; i < digits; i++) {
-		const digit = Math.floor(Math.random() * 10);
-		randomList.push(digit);
-	}
-
-	return randomList.join(" ");
+	return randomNumber;
 };
 
-export { generateRandomNumber };
+export { createRandomNumber };
