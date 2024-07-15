@@ -3,26 +3,24 @@ import { connectDB } from "../connection";
 /**
  * 인증 번호 생성
  */
-const insertVerification = async (email: string, code: string) => {
+const insertVerification = async (code: string) => {
 	const connection = await connectDB();
 	const result = await connection.query(
-		`INSERT INTO verifications (email, code) VALUES (?, ?)`,
-		[email, code]
+		`INSERT INTO verifications (code, expired_at) VALUES (?, ?)`,
+		[code, new Date(Date.now() + 300000)]
 	);
 
 	return result;
 };
 
 /**
- * 인증 번호 조회
+ * 인증 코드 조회
  */
-const getVerificationByValue = async (value: string | number) => {
-	const column = typeof value === "string" ? "email" : "id";
-
+const getCodeById = async (id: number) => {
 	const connection = await connectDB();
 	const [rows] = await connection.query(
-		`SELECT * FROM verifications WHERE ${column}=?`,
-		[value]
+		`SELECT code FROM verifications WHERE id=?`,
+		[id]
 	);
 
 	return rows;
@@ -63,7 +61,7 @@ const deleteVerification = async (id: number) => {
 
 export {
 	insertVerification,
-	getVerificationByValue,
+	getCodeById,
 	updateVerification,
 	deleteVerification,
 };

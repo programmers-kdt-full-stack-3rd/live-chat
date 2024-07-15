@@ -1,39 +1,37 @@
 import { NextFunction, Request, Response } from "express";
-import jwt, { TokenExpiredError } from "jsonwebtoken";
-import dotenv from "dotenv";
+import { TokenExpiredError } from "jsonwebtoken";
 
-import { IRegisterTokenPayload, IRequest } from "../types";
+import { IRequest } from "../types";
 import { UnauthorizedError } from "../errors";
-
-dotenv.config();
+import { verifyToken } from "../services/token";
 
 /**
- * 회원가입 토큰 검증
+ * 다수의 토큰 검증
  */
-const verifyToken = (req: Request, res: Response, next: NextFunction) => {
-	const token = req.cookies["register_token"];
+const verifyTokens = (...tokenNames: string[]) => {
+	return (req: Request, _: Response, next: NextFunction) => {
+		try {
+			for (const tokenName of tokenNames) {
+				// 토큰 조회
+				const token = req.cookies[tokenName];
 
-	try {
-		// 토큰 검증
-		const decoded = jwt.verify(
-			token,
-			process.env.JWT_SECRET_KEY!
-		) as IRegisterTokenPayload;
-		(req as IRequest).registerInfo = decoded;
+				// 토큰 검증
+				const decoded = verifyToken(token);
 
-		next();
-	} catch (error) {
-		// 토큰 만료
-		if (error instanceof TokenExpiredError) {
-			error = new UnauthorizedError();
+				// 다음 미들웨어로 전달
+				(req as IRequest).tokenDecodedInfo = decoded;
+			}
+
+			next();
+		} catch (error) {
+			// 토큰 만료
+			if (error instanceof TokenExpiredError) {
+				error = new UnauthorizedError();
+			}
+
+			next(error);
 		}
-
-		next(error);
-	}
+	};
 };
 
-/**
- * register 순서 토큰 검증
- */
-
-export { verifyToken };
+export { verifyTokens };

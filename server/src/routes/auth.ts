@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import { checkSchema } from "express-validator";
 
 import {
@@ -8,6 +8,7 @@ import {
 	sendVerification,
 	verify,
 } from "../controllers/auth.controller";
+
 import {
 	emailSchema,
 	cookieJWTSchema,
@@ -17,7 +18,7 @@ import {
 	mergeSignedCookiesIntoCookies,
 	validate,
 } from "../middlewares/validate";
-import { verifyToken } from "../middlewares/auth";
+import { verifyTokens } from "../middlewares/auth";
 
 const router = express.Router();
 
@@ -40,7 +41,7 @@ router.patch(
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
 	validate,
-	verifyToken,
+	verifyTokens("auth_token"),
 	updateVerification
 );
 router.delete(
@@ -48,7 +49,7 @@ router.delete(
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
 	validate,
-	verifyToken,
+	verifyTokens("auth_token"),
 	deleteVerification
 );
 
@@ -60,7 +61,7 @@ router.post(
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
 	validate,
-	verifyToken,
+	verifyTokens("auth_token"),
 	sendVerification
 );
 
@@ -72,7 +73,7 @@ router.post(
 	mergeSignedCookiesIntoCookies,
 	checkSchema(verifySchema),
 	validate,
-	verifyToken,
+	verifyTokens("auth_token"),
 	verify
 );
 
