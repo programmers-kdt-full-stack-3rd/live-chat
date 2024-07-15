@@ -1,21 +1,27 @@
 import express from "express";
+import { authMiddleware } from "../middlewares/auth";
 
 import {
 	createChatRoom,
-	deleteChatRoom,
-	readChatRoom,
-	updateChatRoom,
+	getChatrooms,
+	updateChatroom,
+	deleteChatroom,
+	inviteFriendToChatroom,
+	leaveChatroom,
 } from "../controllers/chatroom.controller";
 
 const router = express.Router();
 router.use(express.json());
 
-/**
- * 엔드포인트 정의
- */
-router.post("/chatrooms/:id", createChatRoom);
-router.get("/chatrooms/:id", readChatRoom);
-router.put("/chatrooms/:id", updateChatRoom);
-router.delete("/chatrooms/:id", deleteChatRoom);
+router.post("/chatrooms", authMiddleware, createChatRoom);
+router.get("/chatrooms", authMiddleware, getChatrooms);
+router.put("/chatrooms/:chatroomId", authMiddleware, updateChatroom);
+router.delete("/chatrooms/:chatroomId", authMiddleware, deleteChatroom);
+router.post(
+	"/chatrooms/:chatroomId/invite",
+	authMiddleware,
+	inviteFriendToChatroom
+);
+router.delete("/chatrooms/:chatroomId/invite", authMiddleware, leaveChatroom);
 
 export default router;

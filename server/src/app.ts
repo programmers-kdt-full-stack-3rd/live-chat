@@ -1,15 +1,21 @@
 import express from "express";
+import http from "http";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
 import usersRouter from "./routes/users";
 import authRouter from "./routes/auth";
 import chatroomsRouter from "./routes/chatrooms";
+import { initializeSocket } from "./socket";
 import globalErrorHandler from "./middlewares/error";
+
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+
+initializeSocket(server);
 
 /**
  * 쿠키 서명 SECRET_KEY 설정
