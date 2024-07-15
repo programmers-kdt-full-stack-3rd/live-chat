@@ -1,51 +1,43 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-import { sendAuthMail } from "../services/mail";
-import { generateRandomNumber } from "../utils/random";
-import { generateToken } from "../services/auth";
+import { createNewUser } from "../services/user";
+import { IRequest } from "../types";
+import { BadRequestError } from "../errors";
 
-export const register = (req: Request, res: Response, next: NextFunction) => {
-	// TODO: 회원가입
-};
-
-export const login = (req: Request, res: Response, next: NextFunction) => {
-	// TODO: 로그인
-};
-
-export const emailAuth = async (req: Request, res: Response) => {
-	const email = req.body.email;
+/**
+ * POST /api/users/register
+ */
+const register = async (req: Request, res: Response, next: NextFunction) => {
+	const { email, verified } = (req as IRequest).tokenDecodedInfo;
+	const { password, name } = req.body;
 
 	try {
-		// 랜덤 번호 생성
-		const ranNum = generateRandomNumber(4);
+		// 인증 확인
+		if (!verified) {
+			throw new BadRequestError("이메일 인증이 이뤄지지 않았습니다.");
+		}
 
-		// jwt 토큰 생성
-		const token = generateToken(
-			{
-				email,
-			},
-			ranNum,
-			"5m"
-		);
+		// 유저 정보 생성
+		await createNewUser(email, name, password);
 
-		// 매일 발송
-		await sendAuthMail(email, ranNum);
+		// 쿠키 삭제
+		res.clearCookie("auth_token");
 
 		// 응답
-		res.status(StatusCodes.OK).json({ token });
-	} catch (error) {
-		console.error(error);
-		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-			message: "서버 에러",
+		res.status(StatusCodes.SEE_OTHER).json({
+			message: "리다이렉트 로그인 페이지 url",
 		});
+	} catch (error) {
+		next(error);
 	}
 };
 
-export const emailAuthCheck = (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => {
-	// TODO: 이메일 인증 번호 확인
+/**
+ * POST /api/users/login
+ */
+const login = (req: Request, res: Response) => {
+	// TODO: 로그인
 };
+
+export { register, login };

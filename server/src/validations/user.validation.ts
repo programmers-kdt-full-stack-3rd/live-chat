@@ -1,20 +1,37 @@
 import { Schema } from "express-validator";
 import { DefaultSchemaKeys } from "express-validator/lib/middlewares/schema";
 
-/**
- * email-auth 유효성 검사 schema
- */
-const emailAuthSchema: Schema<DefaultSchemaKeys> = {
-	email: { in: ["body"], isEmail: true },
-	// created_at: {
-	// 	in: ["body"],
-	// 	isTime: {
-	// 		options: {
-	// 			hourFormat: "hour24",
-	// 			mode: "withSeconds",
-	// 		},
-	// 	},
-	// },
+const registerSchema: Schema<DefaultSchemaKeys> = {
+	auth_token: {
+		in: ["cookies"],
+		isJWT: true,
+	},
+	password: {
+		in: ["body"],
+		isString: true,
+		isLength: {
+			errorMessage: "비밀번호는 최소 8자 이상, 20자 이하여야 합니다.",
+			options: { min: 8, max: 20 },
+		},
+		matches: {
+			errorMessage:
+				"비밀번호는 최소 하나의 소문자, 대문자, 숫자, 특수 문자를 포함해야 합니다.",
+			options: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/,
+		},
+	},
+	name: {
+		in: ["body"],
+		isString: true,
+		isLength: {
+			errorMessage: "이름은 최소 2자, 최대 10자 이하여야 합니다.",
+			options: { min: 2, max: 10 },
+		},
+		matches: {
+			errorMessage:
+				"이름은 대소문자, 한글, 하이픈(-), 쉼표(.)만 포함되고, 대소문자 및 한글로 시작되어야 합니다.",
+			options: /^[a-zA-Z가-힣]+(([. -][a-zA-Z가-힣])?[a-zA-Z가-힣]*)*$/,
+		},
+	},
 };
 
-export { emailAuthSchema };
+export { registerSchema };

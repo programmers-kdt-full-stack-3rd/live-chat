@@ -16,4 +16,24 @@ const validate = (req: Request, res: Response, next: NextFunction) => {
 	});
 };
 
-export { validate };
+/**
+ * signed cookies를 cookies 객체에 병합
+ */
+const mergeSignedCookiesIntoCookies = (
+	req: Request,
+	_: Response,
+	next: NextFunction
+) => {
+	const signedCookies = req.signedCookies;
+	const cookies = req.cookies;
+
+	for (const key of Object.keys(signedCookies)) {
+		if (!!cookies.key) continue;
+
+		cookies[key] = signedCookies[key];
+	}
+
+	next();
+};
+
+export { validate, mergeSignedCookiesIntoCookies };
