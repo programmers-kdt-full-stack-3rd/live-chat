@@ -19,9 +19,9 @@ app.use(cookieParser(process.env.COOKIE_SECRET_KEY));
 /**
  * API 라우팅
  */
-app.use("/users", usersRouter);
-app.use("/auth", authRouter);
-app.use("/chatrooms", chatroomsRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/chatrooms", chatroomsRouter);
 
 /**
  * 전역 에러 핸들링 미들함수 설정

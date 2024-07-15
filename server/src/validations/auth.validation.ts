@@ -6,14 +6,14 @@ const emailSchema: Schema<DefaultSchemaKeys> = {
 };
 
 const cookieJWTSchema: Schema<DefaultSchemaKeys> = {
-	register_token: {
+	auth_token: {
 		in: ["cookies"],
 		isJWT: true,
 	},
 };
 
 const verifySchema: Schema<DefaultSchemaKeys> = {
-	register_token: {
+	auth_token: {
 		in: ["cookies"],
 		isJWT: true,
 	},

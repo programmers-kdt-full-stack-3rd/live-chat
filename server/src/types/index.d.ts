@@ -1,45 +1,41 @@
 import { Request } from "express";
-import { JwtPayload } from "jsonwebtoken";
+import { JwtPayload, SignOptions } from "jsonwebtoken";
 
-// DB 관련 타입 및 인터페이스
-interface IInsertId {
-	insertId: number;
-}
+/**
+ * DB 관련 타입 및 인터페이스
+ */
 
-interface IAffectedRows {
-	affectedRows: number;
-}
-
-interface IVerificationShema {
+// verifications 스키마
+type TVerificationsShema = {
 	id: number;
 	email: string;
 	code: string;
 	expired_at: Date;
 	created_at: Date;
 	updated_at: Date;
-}
+};
 
-// express 관련 타입 및 인터페이스
+/**
+ * 토큰 관련 타입 및 인터페이스
+ */
+
+// express request에 token decoded 정보 추가
 interface IRequest extends Request {
-	registerInfo: IRegisterTokenPayload;
+	tokenDecodedInfo: IAuthTokenPayload;
 }
 
-// jwt 토큰 관련 타입 및 인터페이스
-interface IRegisterTokenPayload extends JwtPayload {
-	id: number;
-	status: number;
+interface IAuthTokenPayload extends JwtPayload {
+	verificationId: number;
+	verified: boolean;
+	email: string;
 }
 
-// error 관련 타입 및 인터페이스
+/**
+ * 에러 관련 타입 및 인터페이스
+ */
+
 interface IError extends Error {
 	statusCode?: number;
 }
 
-export {
-	IInsertId,
-	IAffectedRows,
-	IVerificationShema,
-	IRequest,
-	IRegisterTokenPayload,
-	IError,
-};
+export { TVerificationsShema, IRequest, IError, IAuthTokenPayload };

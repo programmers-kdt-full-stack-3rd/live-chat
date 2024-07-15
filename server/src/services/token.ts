@@ -1,20 +1,35 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
+import { IAuthTokenPayload } from "../types";
+
 dotenv.config();
 
 /**
  * 토큰 발급
  */
-const createToken = (payload: object, expiresIn: string = "") => {
-	const options: jwt.SignOptions = {
-		expiresIn,
+const createToken = (
+	payload: IAuthTokenPayload,
+	expiresIn: string | number | undefined
+) => {
+	const token = jwt.sign(payload, process.env.JWT_SECRET_KEY!, {
 		issuer: process.env.JWT_ISSUER,
-	};
-
-	const token = jwt.sign(payload, process.env.JWT_SECRET_KEY!, options);
+		expiresIn,
+	});
 
 	return token;
 };
 
-export { createToken };
+/**
+ * 토큰 검증
+ */
+const verifyToken = (token: string): IAuthTokenPayload => {
+	const decoded = jwt.verify(
+		token,
+		process.env.JWT_SECRET_KEY!
+	) as IAuthTokenPayload;
+
+	return decoded;
+};
+
+export { createToken, verifyToken };
