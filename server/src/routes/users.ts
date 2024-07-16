@@ -6,7 +6,7 @@ import {
 	mergeSignedCookiesIntoCookies,
 	validate,
 } from "../middlewares/validate";
-import { registerSchema } from "../validations/user.validation";
+import { loginSchema, registerSchema } from "../validations/user.validation";
 import { verifyTokens } from "../middlewares/auth";
 
 const router = express.Router();
@@ -23,6 +23,12 @@ router.post(
 	verifyTokens("auth_token"),
 	register
 );
-router.post("/login", login);
+router.post(
+	"/login",
+	mergeSignedCookiesIntoCookies,
+	checkSchema(loginSchema),
+	validate,
+	login
+);
 
 export default router;

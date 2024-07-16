@@ -37,8 +37,29 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
 /**
  * POST /api/users/login
  */
-const login = (req: Request, res: Response) => {
-	// TODO: 로그인
+const login = (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const refreshToken = req.cookies["refresh_token"];
+
+		// refresh 토큰 확인
+		if (!refreshToken) {
+			// TODO: refresh 토큰 및 access 토큰 발급
+			// TODO: 세션 생성
+		} else {
+			// TODO: 세션 확인
+			// TODO: 세션 업데이트
+			// TODO: access 토큰 발급
+		}
+
+		// TODO: 쿠키 설정
+
+		// 메인 페이지로 리다이렉트 응답
+		res.status(StatusCodes.SEE_OTHER).json({
+			message: "리다이렉트 실시간 채팅 메인 url",
+		});
+	} catch (error) {
+		next(error);
+	}
 };
 
 export { register, login };
