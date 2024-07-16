@@ -1,4 +1,6 @@
+import { RowDataPacket } from "mysql2";
 import { connectDB } from "../connection";
+import { TUsersSchema } from "../../types";
 
 const insertUser = async (
 	email: string,
@@ -16,4 +18,15 @@ const insertUser = async (
 	return result;
 };
 
-export { insertUser };
+const getUserByEmail = async (email: string): Promise<TUsersSchema[]> => {
+	const connection = await connectDB();
+	const [rows] = await connection.query<RowDataPacket[]>(
+		`SELECT id, name, password_hash, salt FROM users
+        WHERE email=?`,
+		[email]
+	);
+
+	return rows as TUsersSchema[];
+};
+
+export { insertUser, getUserByEmail };
