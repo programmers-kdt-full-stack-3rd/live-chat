@@ -9,10 +9,11 @@ import { BadRequestError } from "../errors";
  * POST /api/users/register
  */
 const register = async (req: Request, res: Response, next: NextFunction) => {
-	const { email, verified } = (req as IRequest).tokenDecodedInfo;
-	const { password, name } = req.body;
-
 	try {
+		const { email, verified } = (req as IRequest).tokenDecodedInfos!
+			.authInfo!;
+		const { password, name } = req.body;
+
 		// 인증 확인
 		if (!verified) {
 			throw new BadRequestError("이메일 인증이 이뤄지지 않았습니다.");

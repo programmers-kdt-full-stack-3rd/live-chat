@@ -7,9 +7,9 @@ import { TVerificationsShema, IRequest } from "../types/index";
 import { createToken } from "../services/token";
 import {
 	createNewVerification,
-	findCodeById,
-	removeVerificationById,
-	updateCodeById,
+	findCodeByJti,
+	removeVerificationByJti,
+	updateCodeByJti,
 	verifyCode,
 } from "../services/auth";
 import { sendAuthMail } from "../services/mail";
@@ -30,12 +30,12 @@ const createVerification = async (
 
 	try {
 		// 인증 번호 생성 및 DB에 리소스 생성
-		const { insertId } = await createNewVerification();
+		const jti = await createNewVerification();
 
 		// 토큰 발급
 		const token = createToken(
 			{
-				verificationId: insertId,
+				jti,
 				email,
 				verified: false,
 			},
@@ -44,7 +44,7 @@ const createVerification = async (
 
 		// 쿠키 설정
 		res.cookie("auth_token", token, {
-			maxAge: 600000,
+			maxAge: 600000, // 5분
 			httpOnly: true,
 			signed: true,
 		});
@@ -66,14 +66,14 @@ const updateVerification = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	const { verificationId, verified } = (req as IRequest).tokenDecodedInfo;
-
 	try {
+		const { jti, verified } = (req as IRequest).tokenDecodedInfos!
+			.authInfo!;
 		// 인증된 이메일인지 확인
 		if (verified) throw new BadRequestError("이미 인증되었습니다.");
 
 		// 인증 번호 생성 및 인증번호 변경
-		const { affectedRows } = await updateCodeById(verificationId);
+		const { affectedRows } = await updateCodeByJti(jti);
 
 		if (affectedRows !== 1) throw new BadRequestError();
 
@@ -94,14 +94,15 @@ const deleteVerification = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	const { verificationId, verified } = (req as IRequest).tokenDecodedInfo;
-
 	try {
+		const { jti, verified } = (req as IRequest).tokenDecodedInfos!
+			.authInfo!;
+
 		// 인증된 이메일인지 확인
 		if (!verified) throw new BadRequestError("인증이 되지 않았습니다.");
 
 		// DB 리소스 삭제
-		const { affectedRows } = await removeVerificationById(verificationId);
+		const { affectedRows } = await removeVerificationByJti(jti);
 
 		if (affectedRows !== 1) {
 			throw new BadRequestError();
@@ -123,19 +124,17 @@ const sendVerification = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	const { email, verificationId, verified } = (req as IRequest)
-		.tokenDecodedInfo;
-
 	try {
+		const { email, jti, verified } = (req as IRequest).tokenDecodedInfos!
+			.authInfo!;
+
 		// 인증된 이메일인지 확인
 		if (verified) {
 			throw new BadRequestError("이미 인증되었습니다.");
 		}
 
 		// 인증 번호 조회
-		const result = (await findCodeById(
-			verificationId
-		)) as Array<TVerificationsShema>;
+		const result = (await findCodeByJti(jti)) as Array<TVerificationsShema>;
 
 		// 조회 안될 시 오류
 		if (result.length === 0) {
@@ -160,20 +159,18 @@ const sendVerification = async (
  * POST /auth/email/verify
  */
 const verify = async (req: Request, res: Response, next: NextFunction) => {
-	const { code } = req.body;
-	const { verificationId, email, verified } = (req as IRequest)
-		.tokenDecodedInfo;
-
 	try {
+		const { code } = req.body;
+		const { jti, email, verified } = (req as IRequest).tokenDecodedInfos!
+			.authInfo!;
+
 		// 인증된 이메일인지 확인
 		if (verified) {
 			throw new BadRequestError("이미 인증되었습니다.");
 		}
 
 		// 인증 번호 조회
-		const result = (await findCodeById(
-			verificationId
-		)) as Array<TVerificationsShema>;
+		const result = (await findCodeByJti(jti)) as Array<TVerificationsShema>;
 
 		// 조회 안될 시 오류
 		if (result.length === 0) {
@@ -181,7 +178,7 @@ const verify = async (req: Request, res: Response, next: NextFunction) => {
 		}
 
 		// 인증 번호 검증
-		const isVerify = await verifyCode(verificationId, code);
+		const isVerify = await verifyCode(jti, code);
 
 		// 실패시 에러
 		if (!isVerify) throw new UnauthorizedError("잘못된 코드입니다.");
@@ -189,7 +186,7 @@ const verify = async (req: Request, res: Response, next: NextFunction) => {
 		// 토큰 발급
 		const token = createToken(
 			{
-				verificationId,
+				jti,
 				email,
 				verified: true,
 			},

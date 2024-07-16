@@ -21,14 +21,29 @@ type TVerificationsShema = {
 
 // express request에 token decoded 정보 추가
 interface IRequest extends Request {
-	tokenDecodedInfo: IAuthTokenPayload;
+	tokenDecodedInfos?: TTokenDocodedInfos;
 }
 
-interface IAuthTokenPayload extends JwtPayload {
-	verificationId: number;
+type TTokenDocodedInfos = {
+	authInfo?: IAuthInfo;
+	accessInfo?: IAccessInfo;
+	refreshInfo?: IRefreshInfo;
+};
+
+interface IJwtPayload extends JwtPayload {
+	jti: string;
+}
+
+interface IAuthInfo extends IJwtPayload {
 	verified: boolean;
 	email: string;
 }
+
+interface IAccessInfo extends IJwtPayload {
+	userName: boolean;
+}
+
+interface IRefreshInfo extends IJwtPayload {}
 
 /**
  * 에러 관련 타입 및 인터페이스
@@ -38,4 +53,12 @@ interface IError extends Error {
 	statusCode?: number;
 }
 
-export { TVerificationsShema, IRequest, IError, IAuthTokenPayload };
+export {
+	TVerificationsShema,
+	IRequest,
+	TTokenDocodedInfos,
+	IAuthInfo,
+	IAccessInfo,
+	IRefreshInfo,
+	IError,
+};

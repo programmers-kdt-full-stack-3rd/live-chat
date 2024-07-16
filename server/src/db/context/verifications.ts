@@ -3,11 +3,11 @@ import { connectDB } from "../connection";
 /**
  * 인증 번호 생성
  */
-const insertVerification = async (code: string) => {
+const insertVerification = async (jti: string, code: string) => {
 	const connection = await connectDB();
 	const result = await connection.query(
-		`INSERT INTO verifications (code, expired_at) VALUES (?, ?)`,
-		[code, new Date(Date.now() + 300000)]
+		`INSERT INTO verifications (jti, code, expired_at) VALUES (?, ?, ?)`,
+		[jti, code, new Date(Date.now() + 300000)]
 	);
 
 	return result;
@@ -16,11 +16,11 @@ const insertVerification = async (code: string) => {
 /**
  * 인증 코드 조회
  */
-const getCodeById = async (id: number) => {
+const getCodeByJti = async (jti: string) => {
 	const connection = await connectDB();
 	const [rows] = await connection.query(
 		`SELECT code FROM verifications WHERE id=?`,
-		[id]
+		[jti]
 	);
 
 	return rows;
@@ -29,15 +29,15 @@ const getCodeById = async (id: number) => {
 /**
  * 인증 번호 수정
  */
-const updateVerification = async (id: number, code: string) => {
+const updateVerification = async (jti: string, code: string) => {
 	const connection = await connectDB();
 	const result = await connection.query(
 		`
 		UPDATE verifications
 		SET code=?
-		WHERE id=?
+		WHERE jti=?
 		`,
-		[code, id]
+		[code, jti]
 	);
 
 	return result;
@@ -46,14 +46,14 @@ const updateVerification = async (id: number, code: string) => {
 /**
  * 인증 번호 삭제
  */
-const deleteVerification = async (id: number) => {
+const deleteVerification = async (jti: string) => {
 	const connection = await connectDB();
 	const [result] = await connection.query(
 		`
 		DELETE FROM verifications
-		WHERE id=?
+		WHERE jti=?
 		`,
-		[id]
+		[jti]
 	);
 
 	return result;
@@ -61,7 +61,7 @@ const deleteVerification = async (id: number) => {
 
 export {
 	insertVerification,
-	getCodeById,
+	getCodeByJti,
 	updateVerification,
 	deleteVerification,
 };
