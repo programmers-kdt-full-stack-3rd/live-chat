@@ -2,7 +2,7 @@ import { Schema } from "express-validator";
 import { DefaultSchemaKeys } from "express-validator/lib/middlewares/schema";
 
 const registerSchema: Schema<DefaultSchemaKeys> = {
-	auth_token: {
+	authToken: {
 		in: ["cookies"],
 		isJWT: true,
 	},
@@ -35,6 +35,16 @@ const registerSchema: Schema<DefaultSchemaKeys> = {
 };
 
 const loginSchema: Schema<DefaultSchemaKeys> = {
+	refreshToken: {
+		in: ["cookies"],
+		isJWT: true,
+		optional: true,
+	},
+	accessToken: {
+		in: ["cookies"],
+		isJWT: true,
+		optional: true,
+	},
 	email: { in: ["body"], isEmail: true, normalizeEmail: true },
 	password: {
 		in: ["body"],
