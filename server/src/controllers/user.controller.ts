@@ -3,33 +3,38 @@ import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
 
 import {
-	createNewUser,
-	findUserByEmail,
+	registerUser,
+	createUserSession,
+	findUser,
 	verifyPassword,
+	findUserSession,
+	activateSession,
 } from "../services/user";
 import { IRequest } from "../types";
-import { BadRequestError } from "../errors";
 import { createToken } from "../services/token";
+import { checkVerifyEmail } from "../services/auth";
+import { generateExp } from "../utils/time";
 
 /**
  * POST /api/users/register
  */
 const register = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const { email, verified } = (req as IRequest).tokenDecodedInfos!
-			.authInfo!;
-		const { password, name } = req.body;
+		// auth 토큰 정보
+		const authToken = (req as IRequest).authToken!;
 
 		// 인증 확인
-		if (!verified) {
-			throw new BadRequestError("이메일 인증이 이뤄지지 않았습니다.");
-		}
+		checkVerifyEmail(authToken, true);
 
 		// 유저 정보 생성
-		await createNewUser(email, name, password);
+		await registerUser({
+			email: authToken.payload!.sub!,
+			name: req.body.email,
+			password: req.body.password,
+		});
 
 		// 쿠키 삭제
-		res.clearCookie("auth_token");
+		res.clearCookie("authToken");
 
 		// 응답
 		res.status(StatusCodes.SEE_OTHER).json({
@@ -46,55 +51,84 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const userAgent = req.headers["user-agent"];
-		let refreshToken = req.cookies["refresh_token"];
-
+		const ipAddress = req.ip;
 		const { email, password } = req.body;
 
-		let userId = 0;
-		let userName = "";
+		const accessToken = req.cookies.accessToken;
+		const refreshToken = req.cookies.refreshToken;
 
-		// refresh 토큰 확인
-		if (!refreshToken) {
-			// refresh 토큰 없을 경우
+		// 토큰 확인
+		if (!!accessToken || !!refreshToken) {
+			// 메인 페이지로 리다이렉트 응답
+			return res.status(StatusCodes.SEE_OTHER).json({
+				message: "리다이렉트 실시간 채팅 메인 url",
+			});
+		}
 
-			// 유저 데이터 조회
-			const { id, name, passwordHash, salt } = await findUserByEmail(
-				email
-			);
+		// 유저 데이터 조회
+		const user = await findUser({ email, password } as const);
 
-			userId = id;
-			userName = name;
+		// 로그인 검증
+		verifyPassword(user);
 
-			// 로그인 검증
-			verifyPassword(password, passwordHash, salt);
+		// 세션 조회
+		const session = await findUserSession({
+			userId: user.id,
+			userAgent,
+			ipAddress,
+		} as const);
 
-			// refresh 토큰 발급
-			refreshToken = createToken(
-				{ jti: uuidv4(), userId, userAgent },
-				"1w"
-			);
+		// refreshToken 발급
+		const refreshTokenDTO = createToken({
+			payload: {
+				clientId: !session ? uuidv4() : session.clientId,
+				// exp: generateExp(7 * 24 * 60 * 60), // 1주
+				exp: generateExp(20), // 20초
+				aud: !session ? userAgent : session.userAgent,
+			},
+		} as const);
 
-			// TODO: 세션 생성
+		if (!session) {
+			// 세션 생성
+			await createUserSession({
+				clientId: refreshTokenDTO.payload!.clientId!,
+				userId: user.id,
+				userName: user.name,
+				userAgent,
+				ipAddress,
+				refreshToken: refreshTokenDTO.token,
+				expiredAt: new Date(refreshTokenDTO.payload!.exp!),
+			} as const);
 		} else {
-			// refresh 토큰 있을 경우
-			// TODO: 세션 확인
-			// TODO: (세션 없을 경우) 로그인 검증 => 세션 생성
-			// TODO: (세션 있을 경우) 세션 업데이트
-			// TODO: return 리다이렉트 응답
+			// 세션 활성화
+			await activateSession({
+				...session,
+				refreshToken: refreshTokenDTO.token,
+				expiredAt: new Date(refreshTokenDTO.payload!.exp!),
+			} as const);
 		}
 
 		// access 토큰 발급
-		const accessToken = createToken(
-			{
-				jti: uuidv4(),
-				userId,
+		const accessTokenDTO = createToken({
+			payload: {
+				// exp: generateExp(10 * 60), // 10분
+				exp: generateExp(10), // 10초
+				sub: `${user.id}`,
 			},
-			"10m"
-		);
+		});
 
-		// 쿠키 설정
-		res.cookie("refresh_token", refreshToken, {
-			maxAge: 604800000, // 1주
+		// refresh 토큰 쿠키 설정
+		res.cookie("refreshToken", refreshTokenDTO.token, {
+			// maxAge: 7 * 24 * 60 * 60 * 1000, // 1주
+			maxAge: 1 * 60 * 60 * 1000, // 1시간
+			httpOnly: true,
+			signed: true,
+		});
+
+		// access 토큰 쿠키 설정
+		res.cookie("accessToken", accessTokenDTO.token, {
+			// maxAge: 10 * 60 * 1000, // 10분
+			maxAge: 1 * 60 * 60 * 1000, // 1시간
 			httpOnly: true,
 			signed: true,
 		});
@@ -102,8 +136,6 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
 		// 메인 페이지로 리다이렉트 응답
 		res.status(StatusCodes.SEE_OTHER).json({
 			message: "리다이렉트 실시간 채팅 메인 url",
-			access_token: accessToken,
-			user_name: userName,
 		});
 	} catch (error) {
 		next(error);

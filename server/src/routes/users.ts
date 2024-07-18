@@ -1,5 +1,5 @@
 import express from "express";
-import { checkSchema } from "express-validator";
+import { checkExact, checkSchema } from "express-validator";
 
 import { register, login } from "../controllers/user.controller";
 import {
@@ -7,7 +7,8 @@ import {
 	validate,
 } from "../middlewares/validate";
 import { loginSchema, registerSchema } from "../validations/user.validation";
-import { verifyTokens } from "../middlewares/auth";
+import { authRegister, authLiveChat } from "../middlewares/auth";
+import { IRequest } from "../types";
 
 const router = express.Router();
 router.use(express.json());
@@ -19,16 +20,29 @@ router.post(
 	"/register",
 	mergeSignedCookiesIntoCookies,
 	checkSchema(registerSchema),
+	checkExact(),
 	validate,
-	verifyTokens("auth_token"),
+	authRegister,
 	register
 );
 router.post(
 	"/login",
 	mergeSignedCookiesIntoCookies,
 	checkSchema(loginSchema),
+	checkExact(),
 	validate,
 	login
+);
+router.post(
+	"/test",
+	mergeSignedCookiesIntoCookies,
+	authLiveChat,
+	(req, res) => {
+		res.status(200).json({
+			accessToken: (req as IRequest).accessToken,
+			refreshToken: (req as IRequest).refreshToken,
+		});
+	}
 );
 
 export default router;
