@@ -2,19 +2,19 @@ import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import dotenv from "dotenv";
 
-import { TVerificationsShema, IRequest } from "../types/index";
+import { IRequest } from "../types/index";
 
 import { createToken } from "../services/token";
 import {
-	createNewVerification,
-	findCodeByJti,
-	removeVerificationByJti,
-	updateCodeByJti,
+	generateVerification,
+	findVerification,
+	removeVerification,
+	changeCode,
 	verifyCode,
+	checkVerifyEmail,
 } from "../services/auth";
 import { sendAuthMail } from "../services/mail";
-
-import { BadRequestError, UnauthorizedError } from "../errors";
+import { generateExp } from "../utils/time";
 
 dotenv.config();
 
@@ -29,22 +29,20 @@ const createVerification = async (
 	const { email } = req.body;
 
 	try {
-		// 인증 번호 생성 및 DB에 리소스 생성
-		const jti = await createNewVerification();
-
-		// 토큰 발급
-		const token = createToken(
-			{
-				jti,
-				email,
-				verified: false,
+		// 인증 번호 생성, DB에 리소스 저장, 토큰 발급
+		const verification = await generateVerification({
+			authToken: {
+				payload: {
+					verified: false,
+					sub: email,
+					exp: generateExp(5 * 60), // 5분
+				},
 			},
-			"5m"
-		);
+		} as const);
 
 		// 쿠키 설정
-		res.cookie("auth_token", token, {
-			maxAge: 600000, // 5분
+		res.cookie("authToken", verification.authToken!.token, {
+			maxAge: 5 * 60 * 1000, // 5분
 			httpOnly: true,
 			signed: true,
 		});
@@ -67,15 +65,15 @@ const updateVerification = async (
 	next: NextFunction
 ) => {
 	try {
-		const { jti, verified } = (req as IRequest).tokenDecodedInfos!
-			.authInfo!;
+		const authToken = (req as IRequest).authToken!;
+
 		// 인증된 이메일인지 확인
-		if (verified) throw new BadRequestError("이미 인증되었습니다.");
+		checkVerifyEmail(authToken, false);
 
 		// 인증 번호 생성 및 인증번호 변경
-		const { affectedRows } = await updateCodeByJti(jti);
-
-		if (affectedRows !== 1) throw new BadRequestError();
+		await changeCode({
+			authToken,
+		});
 
 		// 응답
 		res.status(StatusCodes.OK).json({
@@ -95,18 +93,15 @@ const deleteVerification = async (
 	next: NextFunction
 ) => {
 	try {
-		const { jti, verified } = (req as IRequest).tokenDecodedInfos!
-			.authInfo!;
+		const authToken = (req as IRequest).authToken!;
 
 		// 인증된 이메일인지 확인
-		if (!verified) throw new BadRequestError("인증이 되지 않았습니다.");
+		checkVerifyEmail(authToken, true);
 
 		// DB 리소스 삭제
-		const { affectedRows } = await removeVerificationByJti(jti);
-
-		if (affectedRows !== 1) {
-			throw new BadRequestError();
-		}
+		await removeVerification({
+			authToken,
+		});
 
 		res.status(StatusCodes.OK).json({
 			message: "DELETE /auth/email/verification",
@@ -125,26 +120,21 @@ const sendVerification = async (
 	next: NextFunction
 ) => {
 	try {
-		const { email, jti, verified } = (req as IRequest).tokenDecodedInfos!
-			.authInfo!;
+		const authToken = (req as IRequest).authToken!;
 
 		// 인증된 이메일인지 확인
-		if (verified) {
-			throw new BadRequestError("이미 인증되었습니다.");
-		}
+		checkVerifyEmail(authToken, true);
 
 		// 인증 번호 조회
-		const result = (await findCodeByJti(jti)) as Array<TVerificationsShema>;
-
-		// 조회 안될 시 오류
-		if (result.length === 0) {
-			throw new BadRequestError();
-		}
-
-		const { code } = result[0];
+		const verification = await findVerification({
+			authToken,
+		});
 
 		// 메일 발송
-		await sendAuthMail(email!, code);
+		await sendAuthMail(
+			verification.authToken!.payload!.sub!,
+			verification.code!
+		);
 
 		// 응답
 		res.status(StatusCodes.OK).json({
@@ -161,41 +151,29 @@ const sendVerification = async (
 const verify = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const { code } = req.body;
-		const { jti, email, verified } = (req as IRequest).tokenDecodedInfos!
-			.authInfo!;
+		const authToken = (req as IRequest).authToken!;
 
 		// 인증된 이메일인지 확인
-		if (verified) {
-			throw new BadRequestError("이미 인증되었습니다.");
-		}
-
-		// 인증 번호 조회
-		const result = (await findCodeByJti(jti)) as Array<TVerificationsShema>;
-
-		// 조회 안될 시 오류
-		if (result.length === 0) {
-			throw new BadRequestError();
-		}
+		checkVerifyEmail(authToken, false);
 
 		// 인증 번호 검증
-		const isVerify = await verifyCode(jti, code);
-
-		// 실패시 에러
-		if (!isVerify) throw new UnauthorizedError("잘못된 코드입니다.");
+		await verifyCode({
+			code,
+			authToken,
+		});
 
 		// 토큰 발급
-		const token = createToken(
-			{
-				jti,
-				email,
+		const token = createToken({
+			payload: {
 				verified: true,
+				sub: authToken.payload!.sub!,
+				exp: generateExp(60 * 60), // 1시간
 			},
-			"1h"
-		);
+		});
 
 		// 쿠키 설정
-		res.cookie("auth_token", token, {
-			maxAge: 3600000,
+		res.cookie("authToken", token.token, {
+			maxAge: 60 * 60 * 1000, // 1시간
 			httpOnly: true,
 			signed: true,
 		});
