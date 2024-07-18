@@ -1,13 +1,21 @@
+import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { IVerificationDTO } from "../../types";
 import { connectDB } from "../connection";
 
 /**
- * 인증 번호 생성
+ * 인증 번호 추가
  */
-const insertVerification = async (code: string) => {
+const insertVerification = async (
+	verificationDTO: IVerificationDTO
+): Promise<ResultSetHeader> => {
 	const connection = await connectDB();
-	const result = await connection.query(
-		`INSERT INTO verifications (code, expired_at) VALUES (?, ?)`,
-		[code, new Date(Date.now() + 300000)]
+	const [result] = await connection.query<ResultSetHeader>(
+		`INSERT INTO verifications (jti, code, expired_at) VALUES (?, ?, ?)`,
+		[
+			verificationDTO.authToken!.payload!.jti!,
+			verificationDTO.code,
+			verificationDTO.expiredAt,
+		]
 	);
 
 	return result;
@@ -16,28 +24,32 @@ const insertVerification = async (code: string) => {
 /**
  * 인증 코드 조회
  */
-const getCodeById = async (id: number) => {
+const getCodeByJti = async (
+	verificationDTO: IVerificationDTO
+): Promise<IVerificationDTO[]> => {
 	const connection = await connectDB();
-	const [rows] = await connection.query(
-		`SELECT code FROM verifications WHERE id=?`,
-		[id]
+	const [rows] = await connection.query<RowDataPacket[]>(
+		`SELECT code FROM verifications WHERE jti=?`,
+		[verificationDTO.authToken!.payload!.jti!]
 	);
 
-	return rows;
+	return rows as IVerificationDTO[];
 };
 
 /**
  * 인증 번호 수정
  */
-const updateVerification = async (id: number, code: string) => {
+const updateVerificationCode = async (
+	verificationDTO: IVerificationDTO
+): Promise<ResultSetHeader> => {
 	const connection = await connectDB();
-	const result = await connection.query(
+	const [result] = await connection.query<ResultSetHeader>(
 		`
 		UPDATE verifications
 		SET code=?
-		WHERE id=?
+		WHERE jti=?
 		`,
-		[code, id]
+		[verificationDTO.code, verificationDTO.authToken!.payload!.jti!]
 	);
 
 	return result;
@@ -46,14 +58,16 @@ const updateVerification = async (id: number, code: string) => {
 /**
  * 인증 번호 삭제
  */
-const deleteVerification = async (id: number) => {
+const deleteVerification = async (
+	verificationDTO: IVerificationDTO
+): Promise<ResultSetHeader> => {
 	const connection = await connectDB();
-	const [result] = await connection.query(
+	const [result] = await connection.query<ResultSetHeader>(
 		`
 		DELETE FROM verifications
-		WHERE id=?
+		WHERE jti=?
 		`,
-		[id]
+		[verificationDTO.authToken!.payload!.jti!]
 	);
 
 	return result;
@@ -61,7 +75,7 @@ const deleteVerification = async (id: number) => {
 
 export {
 	insertVerification,
-	getCodeById,
-	updateVerification,
+	getCodeByJti,
+	updateVerificationCode,
 	deleteVerification,
 };

@@ -1,71 +1,134 @@
-import { QueryResult, ResultSetHeader } from "mysql2";
 import dotenv from "dotenv";
 
-import { createRandomNumber } from "../utils/random";
 import {
 	insertVerification,
 	deleteVerification,
-	updateVerification,
-	getCodeById,
+	updateVerificationCode,
+	getCodeByJti,
 } from "../db/context/verifications";
-import { TVerificationsShema } from "../types";
+import { createRandomNumber } from "../utils/random";
+import { BadRequestError, UnauthorizedError } from "../errors";
+import { ITokenDTO, IVerificationDTO } from "../types";
+import { createToken } from "./token";
 
 dotenv.config();
 
 /**
- * 새로운 인증 번호 생성
+ * 새로운 인증 번호 생성하고 토큰 발급
  */
-const createNewVerification = async (): Promise<ResultSetHeader> => {
-	const code = createRandomNumber(6);
-	const [result] = await insertVerification(code);
+const generateVerification = async (
+	verificationDTO: IVerificationDTO
+): Promise<IVerificationDTO> => {
+	const verification = {
+		...verificationDTO,
+		authToken: {
+			...verificationDTO.authToken,
+			payload: { ...verificationDTO.authToken?.payload },
+		} as ITokenDTO,
+	};
 
-	return result as ResultSetHeader;
+	// 코드 생성
+	verification.code = createRandomNumber(6);
+
+	// 토큰 발급
+	verification.authToken = createToken({
+		...verification.authToken,
+	} as const);
+
+	// 결과 에러 핸들링
+	const result = await insertVerification(verification);
+
+	if (result.affectedRows !== 1) throw new Error("");
+
+	return verification;
 };
 
 /**
  * 인증 코드 조회
  */
-const findCodeById = async (id: number): Promise<object> => {
-	const result = await getCodeById(id);
+const findVerification = async (
+	verificationDTO: IVerificationDTO
+): Promise<IVerificationDTO> => {
+	const verification = {
+		...verificationDTO,
+		authToken: {
+			...verificationDTO.authToken,
+			payload: { ...verificationDTO.authToken?.payload },
+		} as ITokenDTO,
+	};
 
-	return result;
+	const rows = await getCodeByJti(verificationDTO);
+
+	if (rows.length === 0) {
+		throw new BadRequestError("없는 코드 입니다.");
+	}
+
+	verification.code = rows[0].code;
+
+	return verification;
 };
 
 /**
- * 존재하는 인증 번호 수정
+ * 인증 번호 수정
  */
-const updateCodeById = async (id: number): Promise<ResultSetHeader> => {
-	const code = createRandomNumber(6);
-	const [result] = await updateVerification(id, code);
+const changeCode = async (verificationDTO: IVerificationDTO): Promise<void> => {
+	const verification = {
+		...verificationDTO,
+		token: {
+			...verificationDTO.authToken,
+			payload: { ...verificationDTO.authToken?.payload },
+		} as ITokenDTO,
+	};
 
-	return result as ResultSetHeader;
+	verification.code = createRandomNumber(6);
+	const result = await updateVerificationCode(verification);
+
+	if (result.affectedRows !== 1) throw new Error();
 };
 
 /**
- * 이메일로 찾은 인증 번호 삭제
+ * 이메일 인증 정보 삭제
  */
-const removeVerificationById = async (id: number): Promise<ResultSetHeader> => {
-	const result = await deleteVerification(id);
+const removeVerification = async (
+	verificationDTO: IVerificationDTO
+): Promise<void> => {
+	const result = await deleteVerification(verificationDTO);
 
-	return result as ResultSetHeader;
+	if (result.affectedRows !== 1) throw new Error();
 };
 
 /**
  * 인증 번호 조회 및 검증
  */
-const verifyCode = async (id: number, reqCode: string): Promise<boolean> => {
-	const [{ code }] = (await getCodeById(id)) as Array<TVerificationsShema>;
+const verifyCode = async (verificationDTO: IVerificationDTO): Promise<void> => {
+	const rows = await getCodeByJti(verificationDTO);
+
+	if (rows.length !== 1) throw new Error("");
+
+	const code = rows[0].code;
 
 	// 검증
-	const isVerify = reqCode === code ? true : false;
+	const isVerify = verificationDTO.code! === code ? true : false;
 
-	return isVerify;
+	if (!isVerify) throw new UnauthorizedError("잘못된 코드입니다.");
+};
+
+/**
+ * 이메일 인증 확인
+ */
+const checkVerifyEmail = (tokenDTO: ITokenDTO, verified: boolean): void => {
+	if (tokenDTO.payload!.verified !== verified) {
+		if (verified)
+			throw new BadRequestError("이메일 인증이 이뤄지지 않았습니다.");
+		else throw new BadRequestError("이미 인증되었습니다.");
+	}
 };
 
 export {
-	createNewVerification,
-	findCodeById,
-	updateCodeById,
-	removeVerificationById,
+	generateVerification,
+	findVerification,
+	changeCode,
+	removeVerification,
 	verifyCode,
+	checkVerifyEmail,
 };

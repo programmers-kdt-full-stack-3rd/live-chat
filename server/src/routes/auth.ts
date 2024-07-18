@@ -1,5 +1,5 @@
 import express from "express";
-import { checkSchema } from "express-validator";
+import { checkExact, checkSchema } from "express-validator";
 
 import {
 	createVerification,
@@ -18,7 +18,7 @@ import {
 	mergeSignedCookiesIntoCookies,
 	validate,
 } from "../middlewares/validate";
-import { verifyTokens } from "../middlewares/auth";
+import { authRegister } from "../middlewares/auth";
 
 const router = express.Router();
 
@@ -32,7 +32,9 @@ router.use(express.json());
  */
 router.post(
 	"/email/verification",
+	mergeSignedCookiesIntoCookies,
 	checkSchema(emailSchema),
+	checkExact(),
 	validate,
 	createVerification
 );
@@ -40,16 +42,18 @@ router.patch(
 	"/email/verification",
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
+	checkExact(),
 	validate,
-	verifyTokens("auth_token"),
+	authRegister,
 	updateVerification
 );
 router.delete(
 	"/email/verification",
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
+	checkExact(),
 	validate,
-	verifyTokens("auth_token"),
+	authRegister,
 	deleteVerification
 );
 
@@ -60,8 +64,9 @@ router.post(
 	"/email/send-verification",
 	mergeSignedCookiesIntoCookies,
 	checkSchema(cookieJWTSchema),
+	checkExact(),
 	validate,
-	verifyTokens("auth_token"),
+	authRegister,
 	sendVerification
 );
 
@@ -72,8 +77,9 @@ router.post(
 	"/email/verify",
 	mergeSignedCookiesIntoCookies,
 	checkSchema(verifySchema),
+	checkExact(),
 	validate,
-	verifyTokens("auth_token"),
+	authRegister,
 	verify
 );
 

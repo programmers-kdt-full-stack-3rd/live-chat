@@ -2,7 +2,7 @@ import { Schema } from "express-validator";
 import { DefaultSchemaKeys } from "express-validator/lib/middlewares/schema";
 
 const registerSchema: Schema<DefaultSchemaKeys> = {
-	auth_token: {
+	authToken: {
 		in: ["cookies"],
 		isJWT: true,
 	},
@@ -34,4 +34,31 @@ const registerSchema: Schema<DefaultSchemaKeys> = {
 	},
 };
 
-export { registerSchema };
+const loginSchema: Schema<DefaultSchemaKeys> = {
+	refreshToken: {
+		in: ["cookies"],
+		isJWT: true,
+		optional: true,
+	},
+	accessToken: {
+		in: ["cookies"],
+		isJWT: true,
+		optional: true,
+	},
+	email: { in: ["body"], isEmail: true, normalizeEmail: true },
+	password: {
+		in: ["body"],
+		isString: true,
+		isLength: {
+			errorMessage: "비밀번호는 최소 8자 이상, 20자 이하여야 합니다.",
+			options: { min: 8, max: 20 },
+		},
+		matches: {
+			errorMessage:
+				"비밀번호는 최소 하나의 소문자, 대문자, 숫자, 특수 문자를 포함해야 합니다.",
+			options: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/,
+		},
+	},
+};
+
+export { registerSchema, loginSchema };

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { StatusCodes } from "http-status-codes";
+import { BadRequestError } from "../errors";
 
 /**
  * HTTP Requests 유효성 검사
@@ -27,13 +28,19 @@ const mergeSignedCookiesIntoCookies = (
 	const signedCookies = req.signedCookies;
 	const cookies = req.cookies;
 
-	for (const key of Object.keys(signedCookies)) {
-		if (!!cookies.key) continue;
+	try {
+		for (const key of Object.keys(signedCookies)) {
+			if (!!cookies.key) {
+				throw new BadRequestError("서명되지 않은 쿠키가 있습니다.");
+			}
 
-		cookies[key] = signedCookies[key];
+			cookies[key] = signedCookies[key];
+		}
+
+		next();
+	} catch (error) {
+		next(error);
 	}
-
-	next();
 };
 
 export { validate, mergeSignedCookiesIntoCookies };
