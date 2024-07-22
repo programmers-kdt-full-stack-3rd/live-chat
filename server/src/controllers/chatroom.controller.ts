@@ -15,7 +15,8 @@ const handleError = (res: Response, error: unknown) => {
 
 export const createChatRoom = async (req: Request, res: Response) => {
 	const { name } = req.body;
-	const userId = req.user.id;
+	// const userId = req.user.id;
+	const userId = 1;
 
 	try {
 		const chatroomId = await ChatroomService.createChatroom(name, userId);
@@ -26,7 +27,8 @@ export const createChatRoom = async (req: Request, res: Response) => {
 };
 
 export const getChatrooms = async (req: Request, res: Response) => {
-	const userId = req.user.id;
+	// const userId = req.user.id;
+	const userId = 1;
 
 	try {
 		const chatrooms = await ChatroomService.getChatrooms(userId);
@@ -76,7 +78,8 @@ export const inviteFriendToChatroom = async (req: Request, res: Response) => {
 export const leaveChatroom = async (req: Request, res: Response) => {
 	const { chatroomId } = req.params;
 	const numericChatroomId = parseInt(chatroomId, 10);
-	const { userId } = req.user.id;
+	// const userId = req.user.id;
+	const userId = 1;
 
 	try {
 		await ChatroomService.leaveChatroom(numericChatroomId, userId);

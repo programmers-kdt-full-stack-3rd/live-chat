@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
+
 import { IError } from "../types";
 import {
 	BadRequestError,
@@ -10,9 +11,9 @@ import { StatusCodes } from "http-status-codes";
 
 const globalErrorHandler = (
 	err: IError,
-	req: Request,
+	_: Request,
 	res: Response,
-	_: NextFunction
+	next: NextFunction
 ) => {
 	console.error(err.stack);
 

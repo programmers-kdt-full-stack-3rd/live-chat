@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ChangeEvent, FC, FormEvent, RefObject, useRef, useState } from "react";
+import { ChangeEvent, FC, FormEvent, useState } from "react";
 import { GrChat } from "react-icons/gr";
 import { FiLock, FiUser } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa";
@@ -10,11 +10,6 @@ import {
 	buttonWrapper,
 	errorContainer,
 	errorLabel,
-	input,
-	inputContainer,
-	inputIcon,
-	inputPlaceholder,
-	inputWrapper,
 	loginButton,
 	loginMainIcon,
 	mainContainer,
@@ -25,6 +20,7 @@ import {
 	spinner,
 } from "./LoginPage.css";
 import { ILoginRequest, ILoginState } from "../../types/index";
+import IconInput from "../../components/IconInput/IconInput";
 
 const validateEmail = (email: string) => {
 	const regExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,26 +28,18 @@ const validateEmail = (email: string) => {
 };
 
 const LoginPage: FC = () => {
-	// 회원가입 페이지로 라우팅하기 위한 navigate
+	// navigate
 	const navigate = useNavigate();
 
-	// 로딩 상태
+	// 상태
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-
-	// 이메일, 패스워드 input 참조
-	const emailInputRef = useRef(null);
-	const passwordInputRef = useRef(null);
-
-	// 이메일, 패스워드 상태
 	const [loginState, setloginState] = useState<ILoginState>({
 		email: "",
 		password: "",
 	});
-
-	// 이메일 유효성 검사 및 에러 메시지 상태
 	const [error, setError] = useState<string>("");
 
-	// 이메일, 패스워드 상태 저장 및 이메일 유효성 검사
+	// input
 	const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
 		setloginState({
 			...loginState,
@@ -122,13 +110,6 @@ const LoginPage: FC = () => {
 		navigate("/register");
 	};
 
-	// 요소 클릭 시 해당 요소의 자식 input 요소로 focus
-	const handleInputOnMouseUp = (ref: RefObject<HTMLInputElement>) => () => {
-		if (ref.current) {
-			ref.current.focus();
-		}
-	};
-
 	return (
 		<div className={mainWrapper}>
 			<div className={mainContainer}>
@@ -139,43 +120,24 @@ const LoginPage: FC = () => {
 					className={mainFormContainer}
 					onSubmit={handleSubmit}
 				>
-					<div
-						className={inputWrapper}
-						onMouseUp={handleInputOnMouseUp(emailInputRef)}
+					<IconInput
+						type="text"
+						name="email"
+						value={loginState.email}
+						placeholder="email"
+						onChange={handleInputChange}
 					>
-						<FiUser className={inputIcon} />
-						<div className={inputContainer}>
-							<input
-								className={input}
-								type="text"
-								name="email"
-								value={loginState.email}
-								ref={emailInputRef}
-								onChange={handleInputChange}
-								placeholder=" "
-							/>
-							<div className={inputPlaceholder}>email</div>
-						</div>
-					</div>
-					<div
-						className={inputWrapper}
-						onMouseUp={handleInputOnMouseUp(passwordInputRef)}
+						<FiUser />
+					</IconInput>
+					<IconInput
+						type="password"
+						name="password"
+						value={loginState.password}
+						placeholder="password"
+						onChange={handleInputChange}
 					>
-						<FiLock className={inputIcon} />
-						<div className={inputContainer}>
-							<input
-								className={input}
-								type="password"
-								name="password"
-								value={loginState.password}
-								ref={passwordInputRef}
-								onChange={handleInputChange}
-								maxLength={20}
-								placeholder=" "
-							/>
-							<div className={inputPlaceholder}>password</div>
-						</div>
-					</div>
+						<FiLock />
+					</IconInput>
 					<div className={errorContainer}>
 						<label className={errorLabel}>{error}</label>
 					</div>

@@ -1,5 +1,6 @@
 import express from "express";
 import http from "http";
+import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
@@ -9,7 +10,6 @@ import chatroomsRouter from "./routes/chatrooms";
 import { initializeSocket } from "./socket";
 import globalErrorHandler from "./middlewares/error";
 
-
 dotenv.config();
 
 const app = express();
@@ -18,9 +18,16 @@ const server = http.createServer(app);
 initializeSocket(server);
 
 /**
- * 쿠키 서명 SECRET_KEY 설정
+ * CORS 설정
+ */
+app.use(cors());
+
+/**
+ * 쿠키 및 바디 설정
+ *
  */
 app.use(cookieParser(process.env.COOKIE_SECRET_KEY));
+// app.use(bodyParser.json());
 
 /**
  * API 라우팅

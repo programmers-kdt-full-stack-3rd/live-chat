@@ -45,19 +45,23 @@ const loginSchema: Schema<DefaultSchemaKeys> = {
 		isJWT: true,
 		optional: true,
 	},
-	email: { in: ["body"], isEmail: true, normalizeEmail: true },
+	email: {
+		in: ["body"],
+		isEmail: {
+			errorMessage: "잘못된 이메일입니다. 다시 시도해주세요.",
+		},
+		normalizeEmail: true,
+	},
 	password: {
 		in: ["body"],
 		isString: true,
 		isLength: {
-			errorMessage: "비밀번호는 최소 8자 이상, 20자 이하여야 합니다.",
 			options: { min: 8, max: 20 },
 		},
 		matches: {
-			errorMessage:
-				"비밀번호는 최소 하나의 소문자, 대문자, 숫자, 특수 문자를 포함해야 합니다.",
 			options: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/,
 		},
+		errorMessage: "잘못된 비밀번호입니다. 다시 시도해주세요.",
 	},
 };
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { authMiddleware } from "../middlewares/auth";
+import { authLiveChat } from "../middlewares/auth";
 
 import {
 	createChatRoom,
@@ -9,19 +9,37 @@ import {
 	inviteFriendToChatroom,
 	leaveChatroom,
 } from "../controllers/chatroom.controller";
+import { mergeSignedCookiesIntoCookies } from "../middlewares/validate";
 
 const router = express.Router();
 router.use(express.json());
 
-router.post("/chatrooms", authMiddleware, createChatRoom);
-router.get("/chatrooms", authMiddleware, getChatrooms);
-router.put("/chatrooms/:chatroomId", authMiddleware, updateChatroom);
-router.delete("/chatrooms/:chatroomId", authMiddleware, deleteChatroom);
+router.post(
+	"/chatrooms",
+	mergeSignedCookiesIntoCookies,
+
+	authLiveChat,
+	createChatRoom
+);
+router.get("/chatrooms", authLiveChat, getChatrooms);
+router.put("/chatrooms/:chatroomId", authLiveChat, updateChatroom);
+router.delete(
+	"/chatrooms/:chatroomId",
+
+	authLiveChat,
+	deleteChatroom
+);
 router.post(
 	"/chatrooms/:chatroomId/invite",
-	authMiddleware,
+
+	authLiveChat,
 	inviteFriendToChatroom
 );
-router.delete("/chatrooms/:chatroomId/invite", authMiddleware, leaveChatroom);
+router.delete(
+	"/chatrooms/:chatroomId/invite",
+
+	authLiveChat,
+	leaveChatroom
+);
 
 export default router;

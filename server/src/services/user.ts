@@ -100,7 +100,7 @@ const activateSession = async (
 
 	const result = await updateUserSession(userSession);
 
-	if (result.affectedRows !== 1) throw Error("");
+	if (result.affectedRows !== 1) throw Error();
 };
 
 /**
@@ -136,7 +136,8 @@ const verifyPassword = (userDTO: IUserDTO): void => {
 
 	const isVerify = passwordHash === userDTO.passwordHash;
 
-	if (!isVerify) throw new UnauthorizedError("비밀번호가 틀립니다.");
+	if (!isVerify)
+		throw new UnauthorizedError("비밀번호가 틀립니다. 다시 시도해주세요.");
 };
 
 export {

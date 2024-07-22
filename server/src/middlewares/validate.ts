@@ -1,20 +1,20 @@
 import { NextFunction, Request, Response } from "express";
 import { validationResult } from "express-validator";
-import { StatusCodes } from "http-status-codes";
+
 import { BadRequestError } from "../errors";
 
 /**
- * HTTP Requests 유효성 검사
+ * HTTP Request 유효성 검사
  */
-const validate = (req: Request, res: Response, next: NextFunction) => {
-	const result = validationResult(req);
-	if (result.isEmpty()) {
+const validate = (req: Request, _: Response, next: NextFunction) => {
+	const errors = validationResult(req);
+	if (errors.isEmpty()) {
 		return next();
 	}
 
-	res.status(StatusCodes.BAD_REQUEST).json({
-		errors: result.array(),
-	});
+	const errorArray = errors.array({ onlyFirstError: true });
+
+	next(new BadRequestError(errorArray[0].msg));
 };
 
 /**
@@ -31,7 +31,7 @@ const mergeSignedCookiesIntoCookies = (
 	try {
 		for (const key of Object.keys(signedCookies)) {
 			if (!!cookies.key) {
-				throw new BadRequestError("서명되지 않은 쿠키가 있습니다.");
+				throw new BadRequestError();
 			}
 
 			cookies[key] = signedCookies[key];
