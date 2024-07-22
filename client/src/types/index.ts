@@ -12,4 +12,4 @@ interface ILoginRequest {
 	password: string;
 }
 
-export type { ILoginRequest, ILoginState };
+export type { ILoginState, ILoginRequest };
